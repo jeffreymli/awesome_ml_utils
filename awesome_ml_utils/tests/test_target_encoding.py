@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import time
 
-sys.path.insert(1, '/Users/jeff.li/Documents/doordash-dsml/ml_utils/src/')
+sys.path.insert(1, '../src/')
 from target_encoding import TargetEncoder
 
 def test_column_equality():

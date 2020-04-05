@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy import stats
+import numpy as np
 
 def missing_values_table(df):
     mis_val = df.isnull().sum()
@@ -23,9 +24,13 @@ def missing_values_table(df):
 class OutlierImputation:
     def __init__(self, df, cont_cols, std_threshold):
         self.df = df
-        self.cont_cols = cont_cols
         self.std_threshold = std_threshold
         self.outliers = None
+        
+        if isinstance(cont_cols, str):
+            self.cont_cols = [cont_cols]
+        else:
+            self.cont_cols = cont_cols
 
     def _get_outliers(self):
         if isinstance(self.cont_cols, str):
@@ -33,30 +38,86 @@ class OutlierImputation:
 
         assert set(self.cont_cols).issubset(self.df.columns), 'Specified columns do not exist in dataset'
 
-        cont_data = self.df[self.cont_cols].copy()
-        z = pd.DataFrame(np.abs(stats.zscore(cont_data)))
-        z.columns = cont_data.columns
-        self.outliers = z[z[cont_cols] > std_threshold]
+        self.cont_data = self.df[self.cont_cols].copy()
+        self.z = pd.DataFrame(np.abs(stats.zscore(self.cont_data)))
+        self.z.columns = self.cont_data.columns
+        self.outliers = self.z[self.z[self.cont_cols] > self.std_threshold]
 
-    def get_outlier_report(self):
-
-        self._get_outliers()
-        report = pd.DataFrame(self.outliers.count())
-        report.loc[:,'outliers_pct'] = outliers.count()/df.count()
-        report['mean'] = cont_data[outliers.notnull()].mean()
-        report['min'] = cont_data[outliers.notnull()].min()
-        report['max'] = cont_data[outliers.notnull()].max()
-        report.columns = ['outlier_count','outliers_pct','outlier_mean','outlier_min','outlier_max']
-
-        return report
 
     def fit(self):
         self._get_outliers()
+
+    def _calculate_transform(self, impute_type, upper_bound, lower_bound, custom_function = None):
+
+        if upper_bound is None:
+            ## Three standard deviations
+            upper_bound = 99.85
+
+        if lower_bound is None:
+            lower_pound = 0.15
         
-    def transform(self, function, drop = False):
-
         for col in self.cont_cols:
-            val = function(self.df[col])
-            
 
-        pass 
+            lower = np.percentile(self.df[col], lower_bound)
+            upper = np.percentile(self.df[col], upper_bound)
+
+            col_name = str(col) + '_out_imp'
+
+            logging.info("Column name {0} is now called {1} with imputation".format(str(col),col_name))
+
+            if impute_type = 'winsor':
+                self.df.loc[:,col_name] = np.where(self.df[col] > upper, upper, self.df[col])
+                self.df.loc[:,col_name] = np.where(self.df[col] > lower, lower, self.df[col])
+
+            if impute_type = 'drop':
+
+                self.df.loc[:,col] = np.where(self.df[col] > upper, 'drop_999999', self.df[col])
+                self.df.loc[:,col] = np.where(self.df[col] > lower, 'drop_999999', self.df[col])
+                self.df = self.df[self.df[col] != 'drop_999999'].copy()
+
+            if impute_type = 'custom':
+
+                self.df.loc[:,col_name] = np.where(self.df[col] > upper, custom_function(self.df[col]), self.df[col])
+                self.df.loc[:,col_name] = np.where(self.df[col] > lower, custom_function(self.df[col]), self.df[col])
+                
+
+    def transform(self, impute_type, custom_function = None, upper_bound_perc = None, lower_bound_perc = None, **kwargs):
+        
+        if impute_type = 'winsor' or impute_type is None:
+            print("Applying Winsor transformation.......")
+            if upper_bound_perc is None:
+                print("No upper bound percentile specified. Using default 3 standard deviations")
+            if lower_bound_perc is None:
+                print("No lower bound percentile specified. Using default 3 standard deviations")
+            self._calculate_transform(impute_type, upper_bound_perc, lower_bound_perc)
+
+        if impute_type = 'drop':
+            print("Dropping all outliers. Be careful with this method......")
+            if upper_bound_perc is None:
+                print("No upper bound percentile specified. Using default 3 standard deviations")
+            if lower_bound_perc is None:
+                print("No lower bound percentile specified. Using default 3 standard deviations")
+            self._calculate_transform(impute_type, upper_bound_perc, lower_bound_perc)
+
+        if impute_type = 'custom':
+            print("Using a custom function")
+            if upper_bound_perc is None:
+                print("No upper bound percentile specified. Using default 3 standard deviations")
+            if lower_bound_perc is None:
+                print("No lower bound percentile specified. Using default 3 standard deviations")
+            self._calculate_transform(impute_type, upper_bound_perc, lower_bound_perc, **kwargs)
+
+
+    def get_outlier_report(self):
+
+        report = pd.DataFrame(self.outliers.count())
+        report.loc[:,'outliers_pct'] = self.outliers.count()/self.df.count()
+        report['mean'] = self.cont_data[self.outliers.notnull()].mean()
+        report['min'] = self.cont_data[self.outliers.notnull()].min()
+        report['max'] = self.cont_data[self.outliers.notnull()].max()
+        report.columns = ['outlier_count','outliers_pct','outlier_mean','outlier_min','outlier_max']
+
+        return report
+        
+
+            
