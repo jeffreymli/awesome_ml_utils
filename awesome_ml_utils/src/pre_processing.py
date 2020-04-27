@@ -60,7 +60,7 @@ class OutlierImputation:
             impute_type,
             upper_bound,
             lower_bound,
-            custom_function=None):
+            custom_value=None):
 
         if upper_bound is None:
             # Three standard deviations
@@ -109,16 +109,19 @@ class OutlierImputation:
                 print(
                     "Column name {0} is now called {1} with imputation".format(
                         str(col), col_name))
-                self.df.loc[:, col_name] = np.where(
-                    self.df[col] > upper, custom_function(self.df[col]), self.df[col])
-                self.df.loc[:, col_name] = np.where(
-                    self.df[col] > lower, custom_function(self.df[col]), self.df[col])
 
+                self.df.loc[:, col_name] = np.where(
+                    self.df[col] > upper, custom_value, self.df[col])
+
+
+                
+                self.df.loc[:, col_name] = np.where(
+                    self.df[col_name] < lower, custom_value,self.df[col_name])
 
     def transform(
             self,
             impute_type,
-            custom_function=None,
+            custom_value=None,
             upper_bound_perc=None,
             lower_bound_perc=None,
             **kwargs):
@@ -155,6 +158,7 @@ class OutlierImputation:
                 impute_type, upper_bound_perc, lower_bound_perc)
 
         if impute_type == 'custom':
+
             print("Using a custom function")
             if upper_bound_perc is None:
                 print(
@@ -166,7 +170,7 @@ class OutlierImputation:
                 impute_type,
                 upper_bound_perc,
                 lower_bound_perc,
-                custom_function,
+                custom_value,
                 **kwargs)
 
         return self.df.copy()

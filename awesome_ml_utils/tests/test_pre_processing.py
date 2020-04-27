@@ -70,6 +70,15 @@ def test_outlier_transformations():
 	o.fit()
 	data = o.transform(impute_type = 'drop', upper_bound_perc = 97.5, lower_bound_perc = 2.5)
 
+	### Check custom function
+	o = OutlierImputation(X, cont_cols= ['C','A','B'] ,std_threshold = 2)
+	o.fit()
+	data = o.transform(impute_type = 'custom', custom_value = 99999999, upper_bound_perc = 97.5, lower_bound_perc = 2.5)
+
+	print(np.mean(data[data['C'] < lower_bound]['C_out_imp']))
+	print(np.mean(data[data['C'] > upper_bound]['C_out_imp']) )
+	assert np.mean(data[data['C'] < lower_bound]['C_out_imp']) == 99999999
+	assert np.mean(data[data['C'] > upper_bound]['C_out_imp']) == 99999999
 
 
 if __name__=='__main__':
