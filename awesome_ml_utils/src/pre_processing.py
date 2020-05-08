@@ -5,8 +5,6 @@ import logging
 
 
 def missing_values_table(df):
-    """
-    """
     mis_val = df.isnull().sum()
     mis_val_percent = 100 * df.isnull().sum() / len(df)
 
@@ -26,9 +24,6 @@ def missing_values_table(df):
 
 
 class OutlierImputation:
-    """
-
-    """
     def __init__(self, df, cont_cols, std_threshold):
         self.df = df
         self.std_threshold = std_threshold
